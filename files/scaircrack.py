@@ -56,9 +56,14 @@ def main():
     # Read capture file -- it contains beacon, authentication, associacion, handshake and data
     wpa = rdpcap("wpa_handshake.cap")
     wpa_mic = wpa[8]
-    mic = wpa_mic.load.encode("hex")[154:-4]
+
+    # -4 for remove "WPA Key Data Length"
+    # -36 Begin of "WPA Key MIC"
+    # Take only MIC from the frame
+    mic = wpa_mic.load.encode("hex")[-36:-4]
     ssid = wpa[3].info  # like the previous lab
     
+    # Original Data
     data = a2b_hex("0103005f02030a0000000000000000000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
 
     # Labinot : These are management frames, so ToDS and FromDS = 0
@@ -84,6 +89,7 @@ def main():
         #calculate MIC over EAPOL payload (Michael)- The ptk is, in fact, KCK|KEK|TK|MICK
         generatateMIC = hmac.new(ptk[0:16], data, hashlib.sha1)
 
+        # [-8] to remove ICV part
         if str(generatateMIC.hexdigest()[:-8]) == str(mic):
             print(word)
             break
